@@ -1,10 +1,10 @@
 import functools
 from typing import List
 
-from storage.abstract import Storage
+from crawler import Repository
 
 
-class DummyStorage(Storage):
+class DummyStorage(Repository):
     links = list()
     data = list()
 
@@ -19,5 +19,5 @@ class DummyStorage(Storage):
 
 
 @functools.cache
-def get_dummy_storage() -> Storage:
+def get_dummy_storage() -> DummyStorage:
     return DummyStorage()

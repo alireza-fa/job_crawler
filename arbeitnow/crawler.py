@@ -3,8 +3,7 @@ from typing import List
 from bs4 import BeautifulSoup
 
 from arbeitnow.data_save import AdvertisementParser
-from crawler import CrawlerBaseByRequests
-from storage.abstract import Storage
+from crawler import CrawlerBaseByRequests, Repository
 
 
 class ArbeitnowLinkCrawler(CrawlerBaseByRequests):
@@ -12,14 +11,15 @@ class ArbeitnowLinkCrawler(CrawlerBaseByRequests):
     search_keyword_format = '?search=%s&tags=%s&sort_by=%s&page=%d'
     search_by_category = 'jobs/%s/' + search_keyword_format
 
-    def __init__(self, storage: Storage, current_page_num: int, skill: str | None = None, sorted_by: str = "relevance",
+    def __init__(self, repo: Repository, current_page_num: int,
+                 skill: str | None = None, sorted_by: str = "relevance",
                  category: str | None = None, tags: List | None = None):
+        super().__init__(repo)
         self.current_page_num = current_page_num
         self.category = category
         self.tags = self.get_tags(tags=tags)
         self.sorted_by = sorted_by
         self.skill = skill
-        self.storage = storage
 
     @staticmethod
     def get_tags(tags) -> str:
@@ -93,16 +93,16 @@ class ArbeitnowLinkCrawler(CrawlerBaseByRequests):
         return links
 
     def store(self, links: List):
-        self.storage.save_links(links=links)
+        self.repo.save_links(links=links)
 
 
 class ArbeitnowDataCrawler(CrawlerBaseByRequests):
-    def __init__(self, storage: Storage):
+    def __init__(self, repo: Repository):
         self.parser = AdvertisementParser()
-        self.storage = storage
+        super().__init__(repo)
 
     def __load_links(self):
-        return self.storage.load_links(flag=False)
+        return self.repo.load_links(flag=False)
 
     def start(self, link: str | None = None):
         if link:
@@ -123,4 +123,4 @@ class ArbeitnowDataCrawler(CrawlerBaseByRequests):
         #             link.save()
 
     def store(self, data):
-        self.storage.save_data(data=data)
+        self.repo.save_data(data=data)
