@@ -61,11 +61,11 @@ class ArbeitnowLinkCrawler(CrawlerBaseByRequests):
         noscript_data = soup.find("noscript")
         all_a_tag = noscript_data.find_all("a", attrs={"class": "flex"})
         if not all_a_tag:
-            raise ValueError("end of page")
+            return []
 
         old_len, new_len = len(all_a_tag[0].get("href")), len(all_a_tag[0].get("href").replace("page=", ""))
         if old_len > new_len:
-            raise ValueError("end of page")
+            return []
 
         clean_links = list()
 
@@ -78,14 +78,11 @@ class ArbeitnowLinkCrawler(CrawlerBaseByRequests):
         link_list = list()
 
         while True:
-            try:
-                response = self.get(get_url=self.get_crawl_link())
-                new_links = self.find_links(response.text)
-                link_list.extend(new_links)
-            except Exception:
-                break
-
-        return link_list
+            response = self.get(get_url=self.get_crawl_link())
+            new_links = self.find_links(response.text)
+            if not new_links:
+                return link_list
+            link_list.extend(new_links)
 
     def start(self) -> List:
         links = self.crawl_links()
