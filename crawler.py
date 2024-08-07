@@ -42,10 +42,8 @@ class CrawlerBaseByRequests(ABC):
 
     @staticmethod
     def get(get_url: str):
-        try:
-            response_get = requests.get(url=get_url)
-            if response_get.status_code == 200:
-                return response_get
-            raise ValueError()
-        except Exception as ex:
-            raise ex
+        response_get = requests.get(url=get_url)
+        if response_get.status_code == 200:
+            return response_get
+
+        raise Exception("status code is: %d" % response_get.status_code)

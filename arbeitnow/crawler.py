@@ -121,3 +121,5 @@ class ArbeitnowDataCrawler(CrawlerBaseByRequests):
 
     def store(self, data):
         self.repo.save_data(data=data)
+
+# TODO - Filter based on the publication date of the ad
