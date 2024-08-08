@@ -1,5 +1,5 @@
 from arbeitnow.crawler import ArbeitnowCrawler
-from storage.dummy import DummyStorage
+from repository.dummy import DummyStorage
 from arbeitnow.data_save import AdvertisementParser
 
 
