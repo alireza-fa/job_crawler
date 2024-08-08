@@ -1,3 +1,4 @@
+import requests
 from bs4 import BeautifulSoup
 
 
@@ -10,6 +11,37 @@ class AdvertisementParser:
         title_element = self.soup.find("a", attrs={"itemprop": "url"})
         if title_element:
             return title_element.get("title")
+
+    @property
+    def company(self):
+        company_element = self.soup.find("a", attrs={"itemprop": "hiringOrganization"})
+        if company_element:
+            return company_element.text.replace("\n", "")
+
+    @property
+    def city(self):
+        city_elem = self.soup.find("span", attrs={"class": "text-gray-600"})
+        if city_elem:
+            return city_elem.text
+
+    @property
+    def advertise_url(self):
+        advertise_url_element = self.soup.find("a", attrs={"itemprop": "url"})
+        if advertise_url_element:
+            return advertise_url_element.get("href")
+
+    @property
+    def datetime(self):
+        datetime_elem = self.soup.find("time")
+        if datetime_elem:
+            return datetime_elem.get("datetime")
+
+    @property
+    def content(self):
+        content_elem = self.soup.find("div", attrs={"itemprop": "description"})
+        if content_elem:
+            return content_elem.text
+        raise ValueError
 
     @property
     def tags(self):
@@ -34,36 +66,19 @@ class AdvertisementParser:
         if company_link_elem:
             return company_link_elem.get("href")
 
-    @property
-    def city(self):
-        city_elem = self.soup.find("span", attrs={"class": "text-gray-600"})
-        if city_elem:
-            return city_elem.text
-
-    @property
-    def posted_at(self):
-        posted_at_elem = self.soup.find("time")
-        if posted_at_elem:
-            return posted_at_elem.get("datetime")
-
-    @property
-    def content(self):
-        content_elem = self.soup.find("div", attrs={"itemprop": "description"})
-        if content_elem:
-            return content_elem.text
-        raise ValueError
-
     def parse(self, html_doc):
         self.soup = BeautifulSoup(html_doc, 'html.parser')
 
         data = dict(
             title=self.title,
+            company=self.company,
+            city=self.city,
+            advertise_url=self.advertise_url,
+            datetime=self.datetime,
+            content=self.content,
             tags=self.tags,
             salary=self.salary,
             company_link=self.company_link,
-            city=self.city,
-            posted_at=self.posted_at,
-            content=self.content
         )
 
         return data

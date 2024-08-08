@@ -2,60 +2,63 @@ from typing import List
 
 from bs4 import BeautifulSoup
 
-from arbeitnow.data_save import AdvertisementParser
-from crawler import CrawlerBaseByRequests, Repository
+from crawler import CrawlerBaseByRequests
 
 
-class ArbeitnowLinkCrawler(CrawlerBaseByRequests):
-    site_root = "https://www.arbeitnow.com/"
-    search_keyword_format = '?search=%s&tags=%s&sort_by=%s&page=%d'
-    search_by_category = 'jobs/%s/' + search_keyword_format
+class ArbeitnowCrawler(CrawlerBaseByRequests):
+    _site_root = "https://www.arbeitnow.com/"
+    _search_keyword_format = '?search=%s&tags=%s&sort_by=%s&page=%d'
+    _search_by_category = 'jobs/%s/' + _search_keyword_format
+    _current_page_num = 1
+    _category = ""
+    _tags = []
+    _sorted_by = "newest"
 
-    def __init__(self, repo: Repository, current_page_num: int,
-                 skill: str | None = None, sorted_by: str = "relevance",
-                 category: str | None = None, tags: List | None = None):
-        super().__init__(repo)
-        self.current_page_num = current_page_num
-        self.category = category
-        self.tags = self.get_tags(tags=tags)
-        self.sorted_by = sorted_by
-        self.skill = skill
+    def set_current_page_num(self, number: int):
+        self._current_page_num = number
+        return self
 
-    @staticmethod
-    def get_tags(tags) -> str:
+    def set_sorted_by(self, sort: str):
+        self._sorted_by = sort
+        return self
+
+    def set_category(self, category: str):
+        self._category = category
+        return self
+
+    def set_tags(self, tags: List):
         if not tags:
-            return '[]'
-
+            self._tags = '[]'
         if len(tags) == 1:
-            return '["%s", ""]' % tags[0]
+            self._tags = '["%s", ""]' % tags[0]
 
         template = '['
-
         for i in range(len(tags) - 1):
             template += '"%s",' % tags[i]
-
         template += '"%s"]' % tags[len(tags) - 1]
+        self._tags = template
 
-        return template
+        return self
 
-    def get_crawl_link(self):
-        link_template = self.site_root
+    def _get_crawl_link(self):
+        link_template = self._site_root
 
-        if self.category:
-            link_template += self.search_by_category
-            link_template = link_template % (self.category, self.skill, self.tags, self.sorted_by, self.current_page_num)
-            self.current_page_num += 1
+        if self._category:
+            link_template += self._search_by_category
+            link_template = link_template % (self._category, self._search_keyword, self._tags, self._sorted_by,
+                                             self._current_page_num)
+            self._current_page_num += 1
         else:
-            link_template += self.search_keyword_format
-            link_template = link_template % (self.skill, self.tags, self.sorted_by, self.current_page_num)
-            self.current_page_num += 1
+            link_template += self._search_keyword_format
+            link_template = link_template % (self._search_keyword, self._tags, self._sorted_by, self._current_page_num)
+            self._current_page_num += 1
 
         print(link_template)
 
         return link_template
 
     @staticmethod
-    def find_links(html_doc):
+    def _find_links(html_doc):
         soup = BeautifulSoup(html_doc, 'html.parser')
 
         noscript_data = soup.find("noscript")
@@ -74,52 +77,10 @@ class ArbeitnowLinkCrawler(CrawlerBaseByRequests):
 
         return clean_links
 
-    def crawl_links(self) -> List:
-        link_list = list()
-
+    def _crawl_links(self) -> None:
         while True:
-            response = self.get(get_url=self.get_crawl_link())
-            new_links = self.find_links(response.text)
+            response = self._get(get_url=self._get_crawl_link())
+            new_links = self._find_links(response.text)
             if not new_links:
-                return link_list
-            link_list.extend(new_links)
-
-    def start(self) -> List:
-        links = self.crawl_links()
-        self.store(links=links)
-        return links
-
-    def store(self, links: List):
-        self.repo.save_links(links=links)
-
-
-class ArbeitnowDataCrawler(CrawlerBaseByRequests):
-    def __init__(self, repo: Repository):
-        self.parser = AdvertisementParser()
-        super().__init__(repo)
-
-    def __load_links(self):
-        return self.repo.load_links(flag=False)
-
-    def start(self, link: str | None = None):
-        if link:
-            response = self.get(get_url=link)
-            data = self.parser.parse(response.content)
-            self.store(data=data)
-            print(data)
-            return
-
-        # links = self.__load_links()
-
-        # for link in links:
-        #     if not link.flag:
-        #         response = self.get(link.url)
-        #         if response is not None:
-        #             data = self.parser.parse(response.text)
-        #             self.store(data)
-        #             link.save()
-
-    def store(self, data):
-        self.repo.save_data(data=data)
-
-# TODO - Filter based on the publication date of the ad
+                return None
+            self._links.extend(new_links)
